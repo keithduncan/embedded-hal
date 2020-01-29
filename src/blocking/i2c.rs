@@ -31,6 +31,14 @@ pub trait Read {
     fn read(&mut self, address: u8, buffer: &mut [u8]) -> Result<(), Self::Error>;
 }
 
+impl<T: Read> Read for &mut T {
+    type Error = <T as Read>::Error;
+
+    fn read(&mut self, address: u8, buffer: &mut [u8]) -> Result<(), Self::Error> {
+        (*self).read(address, buffer)
+    }
+}
+
 /// Blocking write
 pub trait Write {
     /// Error type
@@ -55,6 +63,14 @@ pub trait Write {
     fn write(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Self::Error>;
 }
 
+impl<T: Write> Write for &mut T {
+    type Error = <T as Write>::Error;
+
+    fn write(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Self::Error> {
+        (*self).write(addr, bytes)
+    }
+}
+
 /// Blocking write (iterator version)
 #[cfg(feature = "unproven")]
 pub trait WriteIter {
@@ -69,6 +85,17 @@ pub trait WriteIter {
     fn write<B>(&mut self, addr: u8, bytes: B) -> Result<(), Self::Error>
     where
         B: IntoIterator<Item = u8>;
+}
+
+#[cfg(feature = "unproven")]
+impl<T: WriteIter> WriteIter for &mut T {
+    type Error = <T as WriteIter>::Error;
+
+    fn write<B>(&mut self, addr: u8, bytes: B) -> Result<(), Self::Error>
+    where
+        B: IntoIterator<Item = u8> {
+        (*self).write(addr, bytes)
+    }
 }
 
 /// Blocking write + read
@@ -106,6 +133,14 @@ pub trait WriteRead {
     ) -> Result<(), Self::Error>;
 }
 
+impl<T: WriteRead> WriteRead for &mut T {
+    type Error = <T as WriteRead>::Error;
+
+    fn write_read(&mut self, address: u8, bytes: &[u8], buffer: &mut [u8]) -> Result<(), Self::Error> {
+        (*self).write_read(address, bytes, buffer)
+    }
+}
+
 /// Blocking write (iterator version) + read
 #[cfg(feature = "unproven")]
 pub trait WriteIterRead {
@@ -126,4 +161,15 @@ pub trait WriteIterRead {
     ) -> Result<(), Self::Error>
         where
         B: IntoIterator<Item = u8>;
+}
+
+#[cfg(unproven)]
+impl<T: WriteIterRead> WriteIterRead for &mut T {
+    type Error = <T as WriteIterRead>::Error;
+
+    fn write_iter_read<B>(&mut self, address: u8, bytes: B, buffer: &mut [u8]) -> Result<(), Self::Error>
+    where
+        B: IntoIterator<Item = u8> {
+        (*self).write_iter_read(address, bytes, buffer)
+    }
 }
